@@ -2188,6 +2188,36 @@ RegisterNUICallback('startCraftQueue', function(data, cb)
     end
 end)
 
+local searching = false
+RegisterNUICallback("startSearching", function(_, cb)
+    searching = true
+    SetNuiFocus(true, true)
+    SetNuiFocusKeepInput(true)
+
+    CreateThread(function()
+        while searching do
+            DisableControlAction(0, 30, true) -- A/D
+            DisableControlAction(0, 31, true) -- W/S
+            DisableControlAction(0, 32, true) -- W
+            DisableControlAction(0, 33, true) -- S
+            DisableControlAction(0, 34, true) -- A
+            DisableControlAction(0, 35, true) -- D
+            DisableControlAction(0, 21, true) -- shift
+            DisableControlAction(0, 22, true) -- space
+            Wait(0)
+        end
+    end)
+
+    cb({})
+end)
+
+RegisterNUICallback("stopSearching", function(_, cb)
+    searching = false
+    SetNuiFocus(false, false)
+    SetNuiFocusKeepInput(false)
+    cb({})
+end)
+
 lib.callback.register('ox_inventory:getVehicleData', function(netid)
     local entity = NetworkGetEntityFromNetworkId(netid)
 
