@@ -1,8 +1,13 @@
+> [!CAUTION]
+> This is still a work in progress and needs testing for **ALL FRAMEWORKS**.
+
 # 📌 Project Status 
+> [!NOTE]  
+> Project status displays all features that are currently working both front and backend. If you come across an issue belonging to the inventory, please use the GitHub Issues page to submit and issue. 
 
 ## 🚧 Work in Progress 
-
-Features currently being developed, tested, or refined. 
+> [!TIP]
+> These features are either implentmented or in the process of being implentmented.
 
 - [ ] Finalize Split Control
 - [ ] Rework Crafting + Crafting Inventory
@@ -10,15 +15,16 @@ Features currently being developed, tested, or refined.
 --- 
 
 ## 📝 Planned / Not Started 
-
-Ideas, future additions, or upcoming improvements. 
+> [!TIP]
+> These features have not yet been started or implentmented.
 
 - [ ] Add hotbar section when viewing another person inventory
 
 --- 
 
 ## ✅ Completed 
-Implemented, tested, and stable features.
+> [!IMPORTANT]  
+> These are features that are currently working and implentmented. If you find a problem, please use the GitHub Issues page to submit the problem. 
 
 - [x] Added Slot Restrictions
 - [x] Fixed Utility Inventory
@@ -30,6 +36,8 @@ Implemented, tested, and stable features.
 # 🎨 Project Description
 
 **All credit goes to Casper and his inital resdesign. I've either made things worst or better, lol.**
+
+Shoutout to Autlaaw for the slot restrtions and icons for the utility inventory. 
 
 This redesigned version of **ox_inventory** is an active **work in progress**, released early so the community can continue improving, expanding, and polishing it. It builds on Casper’s original redesign while fixing multiple issues, improving stability, and introducing new features across the UI and core logic.
 
