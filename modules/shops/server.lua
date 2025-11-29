@@ -213,37 +213,28 @@ end)
 
 local function canAffordItem(inv, currency, price)
     if price < 0 then
-        return {
-            type = 'error',
-            description = locale('cannot_afford', 'invalid price')
+        return { type = 'error', description = locale('cannot_afford', 'invalid price')
         }
     end
 
     if currency == 'cash' then
         local count = Inventory.GetItemCount(inv, 'money')
-        if count >= price then return true end
 
-        return {
-            type = 'error',
-            description = locale('cannot_afford', locale('$') .. math.groupdigits(price))
-        }
+        local canAfford = count >= price
+
+        return canAfford or { TriggerClientEvent('ox_lib:notify', inv.id, { type = 'error', description = locale('cannot_afford', locale('$') .. math.groupdigits(price)) }) }
     elseif currency == 'bank' then
-        local canAfford = server.hasBalance(inv.owner, price)
+        local canAfford = server.hasBalance(inv.id, price)
 
-        if canAfford then return true end
-
-        return {
-            type = 'error',
-            description = locale('cannot_afford', math.groupdigits(price) .. ' Bank')
-        }
+        return canAfford or { TriggerClientEvent('ox_lib:notify', inv.id, { type = 'error', description = locale('cannot_afford', math.groupdigits(price) .. ' Bank') }) }
 	end
 end
 
 local function removeCurrency(inv, currency, amount)
     if currency == 'cash' then
-        Inventory.RemoveItem(inv, 'money', amount)
+        Inventory.RemoveItem(inv.id, 'money', amount)
     elseif currency == 'bank' then
-        server.withdrawMoney(inv.owner, amount)
+        server.withdrawMoney(inv.id, amount)
     end
 end
 
