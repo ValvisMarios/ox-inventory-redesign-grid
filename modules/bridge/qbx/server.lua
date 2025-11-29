@@ -95,11 +95,32 @@ function server.buyLicense(inv, license)
 end
 
 function server.hasBalance(source, amt)
-    print('If you know how to do the logic, please do it here and commit it. If not, leave it blank. I will fix eventually.')
+    local char = QBX:GetPlayer(source)
+
+    if char ~= nil then
+        if char.Functions.GetMoney('bank') >= amt then
+            return true
+        else
+            return false
+        end
+    end
+
+    return false
 end
 
 function server.withdrawMoney(source, amt)
-    print('If you know how to do the logic, please do it here and commit it. If not, leave it blank. I will fix eventually.')
+    local char = QBX:GetPlayer(source)
+
+    if char ~= nil then
+        if char.Functions.GetMoney('bank') >= amt then
+            char.Functions.RemoveMoney('bank', amt, 'withdraw_money')
+            return true
+        else
+            return false
+        end
+    end
+
+    return false
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
