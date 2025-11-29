@@ -76,6 +76,37 @@ function server.buyLicense(inv, license)
 	return true, 'have_purchased'
 end
 
+function server.hasBalance(source, amt)
+	local char = server.GetPlayerFromId(source)
+
+	if char ~= nil then
+		if char.getAccount('bank').money >= amt then
+			print('Bank Account Balance', char.getAccount('bank').money)
+			return true
+		else
+			return false
+		end
+	end
+	return false
+end
+
+function server.withdrawMoney(source, amt)
+	local char = server.GetPlayerFromId(source)
+
+	if char ~= nil then
+		local bankAccount = char.getAccount('bank')
+
+		if bankAccount.money >= amt then
+			print('Checking Bank Balance', source)
+			char.removeAccountMoney('bank', amt)
+			return true
+		else
+			return false
+		end
+	end
+	return false
+end
+
 --- Takes traditional item data and updates it to support ox_inventory, i.e.
 --- ```
 --- Old: {"cola":1, "burger":3}
