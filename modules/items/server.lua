@@ -106,11 +106,11 @@ CreateThread(function()
                 file[fileSize + 1] = '}'
 
                 SaveResourceFile(shared.resource, 'data/items.lua', table.concat(file), -1)
-                exports['sandbox-base']:LoggerInfo("Inventory", count .. " items have been copied from the database.")
-                exports['sandbox-base']:LoggerInfo("Inventory", "You should restart the resource to load the new items.")
+                shared.info(count, 'items have been copied from the database.')
+                shared.info('You should restart the resource to load the new items.')
             end
 
-            exports['sandbox-base']:LoggerInfo("Inventory", "Database contains " .. #items .. " items.")
+            shared.info('Database contains', #items, 'items.')
         end
 
         Wait(500)
@@ -124,7 +124,7 @@ CreateThread(function()
         count += 1
     end
 
-    exports['sandbox-base']:LoggerInfo("Inventory", "Inventory has loaded " .. count .. " items")
+    shared.info(('Inventory has loaded %d items'):format(count))
     collectgarbage('collect') -- clean up from initialisation
     shared.ready = true
 end)
