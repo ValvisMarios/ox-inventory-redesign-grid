@@ -719,104 +719,104 @@ RegisterCommand('convertinventory', function(source, args)
     CreateThread(convert)
 end, true)
 
--- lib.addCommand('setitem', {
---     help = 'Sets the item count for a player, removing or adding as needed',
---     params = {
---         { name = 'target', type = 'playerId',                                     help = 'The player to set the items for' },
---         { name = 'item',   type = 'string',                                       help = 'The name of the item' },
---         { name = 'count',  type = 'number',                                       help = 'The amount of items to set',     optional = true },
---         { name = 'type',   help = 'Add or remove items with the metadata "type"', optional = true },
---     },
---     restricted = 'group.admin',
--- }, function(source, args)
---     local item = Items(args.item)
+lib.addCommand('setitem', {
+    help = 'Sets the item count for a player, removing or adding as needed',
+    params = {
+        { name = 'target', type = 'playerId',                                     help = 'The player to set the items for' },
+        { name = 'item',   type = 'string',                                       help = 'The name of the item' },
+        { name = 'count',  type = 'number',                                       help = 'The amount of items to set',     optional = true },
+        { name = 'type',   help = 'Add or remove items with the metadata "type"', optional = true },
+    },
+    restricted = 'group.admin',
+}, function(source, args)
+    local item = Items(args.item)
 
---     if item then
---         local inventory = Inventory(args.target) --[[@as OxInventory]]
---         local count = args.count and math.max(args.count, 0) or 0
+    if item then
+        local inventory = Inventory(args.target) --[[@as OxInventory]]
+        local count = args.count and math.max(args.count, 0) or 0
 
---         local success, response = Inventory.SetItem(inventory, item.name, count or 0,
---             args.type and { type = tonumber(args.type) or args.type })
+        local success, response = Inventory.SetItem(inventory, item.name, count or 0,
+            args.type and { type = tonumber(args.type) or args.type })
 
---         if not success then
---             return Citizen.Trace(('Failed to set %s count to %sx for player %s (%s)'):format(item.name, count,
---                 args.target, response))
---         end
+        if not success then
+            return Citizen.Trace(('Failed to set %s count to %sx for player %s (%s)'):format(item.name, count,
+                args.target, response))
+        end
 
---         source = Inventory(source) or { label = 'console', owner = 'console' }
+        source = Inventory(source) or { label = 'console', owner = 'console' }
 
---         if server.loglevel > 0 then
---             lib.logger(source.owner, 'admin',
---                 ('"%s" set "%s" %s count to %sx'):format(source.label, inventory.label, item.name, count))
---         end
---     end
--- end)
+        if server.loglevel > 0 then
+            lib.logger(source.owner, 'admin',
+                ('"%s" set "%s" %s count to %sx'):format(source.label, inventory.label, item.name, count))
+        end
+    end
+end)
 
--- lib.addCommand('clearevidence', {
---     help = 'Clears a police evidence locker with the given id',
---     params = {
---         { name = 'locker', type = 'number', help = 'The locker id to clear' },
---     },
--- }, function(source, args)
---     if not server.isPlayerBoss then return end
+lib.addCommand('clearevidence', {
+    help = 'Clears a police evidence locker with the given id',
+    params = {
+        { name = 'locker', type = 'number', help = 'The locker id to clear' },
+    },
+}, function(source, args)
+    if not server.isPlayerBoss then return end
 
---     local inventory = Inventory(source)
---     if not inventory then return end
+    local inventory = Inventory(source)
+    if not inventory then return end
 
---     local group, grade = server.hasGroup(inventory, shared.police)
---     local hasPermission = group and server.isPlayerBoss(source, group, grade)
+    local group, grade = server.hasGroup(inventory, shared.police)
+    local hasPermission = group and server.isPlayerBoss(source, group, grade)
 
---     if hasPermission then
---         MySQL.query('DELETE FROM ox_inventory WHERE name = ?', { ('evidence-%s'):format(args.locker) })
---     end
--- end)
+    if hasPermission then
+        MySQL.query('DELETE FROM ox_inventory WHERE name = ?', { ('evidence-%s'):format(args.locker) })
+    end
+end)
 
--- lib.addCommand('takeinv', {
---     help = 'Confiscates the target inventory, to restore with /restoreinv',
---     params = {
---         { name = 'target', type = 'playerId', help = 'The player to confiscate items from' },
---     },
---     restricted = 'group.admin',
--- }, function(source, args)
---     Inventory.Confiscate(args.target)
--- end)
+lib.addCommand('takeinv', {
+    help = 'Confiscates the target inventory, to restore with /restoreinv',
+    params = {
+        { name = 'target', type = 'playerId', help = 'The player to confiscate items from' },
+    },
+    restricted = 'group.admin',
+}, function(source, args)
+    Inventory.Confiscate(args.target)
+end)
 
--- lib.addCommand({ 'restoreinv', 'returninv' }, {
---     help = 'Restores a previously confiscated inventory for the target',
---     params = {
---         { name = 'target', type = 'playerId', help = 'The player to restore items to' },
---     },
---     restricted = 'group.admin',
--- }, function(source, args)
---     Inventory.Return(args.target)
--- end)
+lib.addCommand({ 'restoreinv', 'returninv' }, {
+    help = 'Restores a previously confiscated inventory for the target',
+    params = {
+        { name = 'target', type = 'playerId', help = 'The player to restore items to' },
+    },
+    restricted = 'group.admin',
+}, function(source, args)
+    Inventory.Return(args.target)
+end)
 
--- lib.addCommand('clearinv', {
---     help = 'Wipes all items from the target inventory',
---     params = {
---         { name = 'invId', help = 'The inventory to wipe items from' },
---     },
---     restricted = 'group.admin',
--- }, function(source, args)
---     Inventory.Clear(tonumber(args.invId) or args.invId == 'me' and source or args.invId)
--- end)
+lib.addCommand('clearinv', {
+    help = 'Wipes all items from the target inventory',
+    params = {
+        { name = 'invId', help = 'The inventory to wipe items from' },
+    },
+    restricted = 'group.admin',
+}, function(source, args)
+    Inventory.Clear(tonumber(args.invId) or args.invId == 'me' and source or args.invId)
+end)
 
--- lib.addCommand('saveinv', {
---     help = 'Save all pending inventory changes to the database',
---     params = {
---         { name = 'lock', help = 'Lock inventory access, until restart or saved without a lock', optional = true },
---     },
---     restricted = 'group.admin',
--- }, function(source, args)
---     Inventory.SaveInventories(args.lock == 'true', false)
--- end)
+lib.addCommand('saveinv', {
+    help = 'Save all pending inventory changes to the database',
+    params = {
+        { name = 'lock', help = 'Lock inventory access, until restart or saved without a lock', optional = true },
+    },
+    restricted = 'group.admin',
+}, function(source, args)
+    Inventory.SaveInventories(args.lock == 'true', false)
+end)
 
--- lib.addCommand('viewinv', {
---     help = 'Inspect the target inventory without allowing interactions',
---     params = {
---         { name = 'invId', help = 'The inventory to inspect' },
---     },
---     restricted = 'group.admin',
--- }, function(source, args)
---     Inventory.InspectInventory(source, tonumber(args.invId) or args.invId)
--- end)
+lib.addCommand('viewinv', {
+    help = 'Inspect the target inventory without allowing interactions',
+    params = {
+        { name = 'invId', help = 'The inventory to inspect' },
+    },
+    restricted = 'group.admin',
+}, function(source, args)
+    Inventory.InspectInventory(source, tonumber(args.invId) or args.invId)
+end)
