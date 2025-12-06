@@ -61,8 +61,8 @@ const InventoryGrid: React.FC<InventoryGridProps> = ({
   }, [entry]);
 
   const renderedItems = itemsOverride ?? inventory.items;
-  
-  const slotsToShow = useMemo(() => {
+
+    const slotsToShow = useMemo(() => {
     return renderedItems;
   }, [renderedItems]);
 
