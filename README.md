@@ -6,7 +6,6 @@
 > Project status displays all features that are currently working both front and backend. If you come across an issue belonging to the inventory, please use the GitHub Issues page to submit and issue. 
 
 ## 🚧 Work in Progress 
-> [!TIP]
 > These features are either implentmented or in the process of being implentmented.
 
 - [ ] Rework Crafting + Crafting Inventory
@@ -14,7 +13,6 @@
 --- 
 
 ## 📝 Planned / Not Started 
-> [!TIP]
 > These features have not yet been started or implentmented.
 
 - [ ] Make it so when armor is in the armor slot, it is equipped
@@ -23,7 +21,6 @@
 --- 
 
 ## ✅ Completed 
-> [!IMPORTANT]  
 > These are features that are currently working and implentmented. If you find a problem, please use the GitHub Issues page to submit the problem. 
 
 - [x] Added Slot Restrictions
