@@ -1,4 +1,43 @@
 return {
+	['airdrop_flare_basic'] = {
+        label = 'Basic Airdrop Flare',
+        weight = 500,
+        stack = true,
+        close = true,
+        description = 'Call in a basic supply drop',
+        client = {
+            image = 'airdrop_flare_basic.png',
+            usetime = 2500,
+            export = 'airdrop_system.useFlare'
+        }
+    },
+
+    ['airdrop_flare_weapon'] = {
+        label = 'Weapon Airdrop Flare',
+        weight = 500,
+        stack = true,
+        close = true,
+        description = 'Call in a weapon supply drop',
+        client = {
+            image = 'airdrop_flare_weapon.png',
+            usetime = 2500,
+            export = 'airdrop_system.useFlare'
+        }
+    },
+
+    ['airdrop_flare_vip'] = {
+        label = 'VIP Airdrop Flare',
+        weight = 500,
+        stack = true,
+        close = true,
+        description = 'Call in a premium supply drop with rare items',
+        client = {
+            image = 'airdrop_flare_vip.png',
+            usetime = 2500,
+            export = 'airdrop_system.useFlare'
+        }
+    },
+	-- default
 	['testburger'] = {
 		label = 'Test Burger',
 		weight = 220,

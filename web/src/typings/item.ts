@@ -10,3 +10,8 @@ export type ItemData = {
   ammoName?: string;
   image?: string;
 };
+
+export type ItemDataWithGrid = ItemData & {
+  gridWidth?: number;
+  gridHeight?: number;
+};

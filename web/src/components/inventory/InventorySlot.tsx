@@ -15,6 +15,19 @@ import { closeTooltip, openTooltip } from '../../store/tooltip';
 import { openContextMenu } from '../../store/contextMenu';
 import { useMergeRefs } from '@floating-ui/react';
 import { Rarity, getRarityKey, getRarityDisplayName } from '../../store/rarity';
+import { getDefaultGridSize } from './gridSizes';
+
+export function getItemWidth(item: any): number {
+  if (!item?.name) return 1;
+  const itemData = Items[item.name] as any;
+  return itemData?.gridWidth ?? item.gridWidth ?? getDefaultGridSize(item.name).w;
+}
+
+export function getItemHeight(item: any): number {
+  if (!item?.name) return 1;
+  const itemData = Items[item.name] as any;
+  return itemData?.gridHeight ?? item.gridHeight ?? getDefaultGridSize(item.name).h;
+}
 
 interface SlotProps {
   inventoryId: string;
@@ -25,21 +38,16 @@ interface SlotProps {
   onUse?: (item: any) => void;
   canDrop?: (item: any) => boolean;
   style?: React.CSSProperties;
-  onCtrlClick?: (item: any) => void; // Add onCtrlClick prop
+  onCtrlClick?: (item: any) => void;
+  posLeft?: number;
+  posTop?: number;
+  slotWidth?: number;
+  slotHeight?: number;
+  absolute?: boolean;
 }
 
 const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> = (
-  {
-    item,
-    inventoryId,
-    inventoryType,
-    displayInventoryType,
-    inventoryGroups,
-    onUse,
-    canDrop,
-    style,
-    onCtrlClick,
-  },
+  { item, inventoryId, inventoryType, displayInventoryType, inventoryGroups, onUse, canDrop, style, onCtrlClick, posLeft, posTop, slotWidth, slotHeight, absolute = false },
   ref
 ) => {
   const manager = useDragDropManager();
@@ -51,85 +59,53 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
   const rarityKey = hasItem ? getRarityKey(item?.rarity) : null;
   const rarityColor = rarityKey ? Rarity[rarityKey] : null;
 
+  const itemW = getItemWidth(item);
+  const itemH = getItemHeight(item);
+
   const withAlpha = (color: string, alpha: number) => {
     return color.replace(/rgba?\(([^)]+)\)/, (match, contents) => {
       if (!contents) return match;
       const parts = contents.split(',').map((p: string) => p.trim());
-      if (parts.length === 3) {
-        return `rgba(${parts.join(', ')}, ${alpha})`;
-      } else if (parts.length === 4) {
-        return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
-      }
+      if (parts.length === 3) return `rgba(${parts.join(', ')}, ${alpha})`;
+      if (parts.length === 4) return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
       return match;
     });
   };
 
-  const canDrag = useCallback(() => {
+  const canDragCb = useCallback(() => {
     if (!isSlotWithItem(item, true)) return false;
     if (inventoryType === InventoryType.SHOP) return true;
-    return (
-      canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) &&
-      canCraftItem(item, inventoryType)
-    );
+    return (canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) && canCraftItem(item, inventoryType));
   }, [item, inventoryType, inventoryGroups]);
 
   const [{ isDragging }, drag] = useDrag<DragSource, void, { isDragging: boolean }>(
     () => ({
       type: 'SLOT',
-      collect: (monitor) => ({
-        isDragging: monitor.isDragging(),
-      }),
+      collect: (monitor) => ({ isDragging: monitor.isDragging() }),
       item: () => {
-        if (!canDrag()) return null;
-        return {
-          inventory: inventoryType,
-          item: {
-            ...item,
-            label:
-              item.metadata?.label ??
-              item.label ??
-              Items[item.name]?.label ??
-              item.name,
-          },
-          image: item?.name && `url(${getItemUrl(item) || 'none'})`,
-        };
+        if (!canDragCb()) return null;
+        return { inventory: inventoryType, item: { ...item, label: item.metadata?.label ?? item.label ?? Items[item.name]?.label ?? item.name }, image: item?.name && `url(${getItemUrl(item) || 'none'})` };
       },
-      canDrag,
+      canDrag: canDragCb,
     }),
-    [inventoryType, item, canDrag]
+    [inventoryType, item, canDragCb]
   );
 
-  const [{ isOver, canDrop: isDroppable }, drop] = useDrop<
-    DragSource,
-    void,
-    { isOver: boolean; canDrop: boolean }
-  >(
+  const [{ isOver }, drop] = useDrop<DragSource, void, { isOver: boolean; canDrop: boolean }>(
     () => ({
       accept: 'SLOT',
-      collect: (monitor) => ({
-        isOver: monitor.isOver(),
-        canDrop: monitor.canDrop(),
-      }),
+      collect: (monitor) => ({ isOver: monitor.isOver(), canDrop: monitor.canDrop() }),
       drop: (source) => {
         dispatch(closeTooltip());
         switch (source.inventory) {
-          case InventoryType.SHOP:
-            onBuy(source, { inventory: inventoryType, item: { ...item } });
-            break;
-          case InventoryType.CRAFTING:
-            onCraft(source, { inventory: inventoryType, item: { ...item } });
-            break;
-          default:
-            onDrop(source, { inventory: inventoryType, item: { ...item } });
-            break;
+          case InventoryType.SHOP: onBuy(source, { inventory: inventoryType, item: { ...item } }); break;
+          case InventoryType.CRAFTING: onCraft(source, { inventory: inventoryType, item: { ...item } }); break;
+          default: onDrop(source, { inventory: inventoryType, item: { ...item } }); break;
         }
       },
       canDrop: (source) => {
         if (source.inventory === InventoryType.SHOP) return false;
-        const baseAllowed =
-          (source.item.slot !== item.slot || source.inventory !== inventoryType) &&
-          inventoryType !== InventoryType.SHOP &&
-          inventoryType !== InventoryType.CRAFTING;
+        const baseAllowed = (source.item.slot !== item.slot || source.inventory !== inventoryType) && inventoryType !== InventoryType.SHOP && inventoryType !== InventoryType.CRAFTING;
         if (!baseAllowed) return false;
         return canDrop ? canDrop(source.item) : true;
       },
@@ -140,17 +116,13 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
   useNuiEvent('refreshSlots', (data: { items?: ItemsPayload | ItemsPayload[] }) => {
     if (!isDragging && !data.items) return;
     if (!Array.isArray(data.items)) return;
-
-    const itemSlot = data.items.find(
-      (dataItem) => dataItem.item.slot === item.slot && dataItem.inventory === inventoryId
-    );
-
+    const itemSlot = data.items.find((dataItem) => dataItem.item.slot === item.slot && dataItem.inventory === inventoryId);
     if (!itemSlot) return;
-
     manager.dispatch({ type: 'dnd-core/END_DRAG' });
   });
 
   const connectRef = (element: HTMLDivElement) => drag(drop(element));
+  const refs = useMergeRefs([connectRef, ref]);
 
   const handleContext = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -163,17 +135,15 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
     dispatch(closeTooltip());
     if (timerRef.current) clearTimeout(timerRef.current);
     if (event.ctrlKey && isSlotWithItem(item)) {
-      if (inventoryType === InventoryType.SHOP && onCtrlClick) {
-        onCtrlClick(item); // Call onCtrlClick for shop items
-      } else if (inventoryType !== InventoryType.CRAFTING) {
-        onDrop({ item: item, inventory: inventoryType });
-      }
+      if (inventoryType === InventoryType.SHOP && onCtrlClick) { onCtrlClick(item); }
+      else if (inventoryType !== InventoryType.CRAFTING) { onDrop({ item: item, inventory: inventoryType }); }
     } else if (event.altKey && isSlotWithItem(item) && inventoryType === 'player') {
       if (onUse) onUse(item);
     }
   };
 
-  const refs = useMergeRefs([connectRef, ref]);
+  const imgSizePct = Math.min(88, 50 + (itemW - 1) * 12 + (itemH - 1) * 12);
+  const positionStyle: React.CSSProperties = absolute ? { position: 'absolute', left: posLeft, top: posTop, width: slotWidth, height: slotHeight, zIndex: hasItem ? 2 : 1 } : {};
 
   return (
     <div
@@ -182,59 +152,29 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
       onClick={handleClick}
       className="inventory-slot"
       style={{
+        ...positionStyle,
         borderRadius: '4px',
-        padding: '8px',
-        border: isOver
-          ? '1px dashed rgba(255,255,255,0.4)'
-          : '1px solid transparent',
+        padding: '6px',
+        boxSizing: 'border-box',
+        border: isOver ? '1px dashed rgba(255,255,255,0.5)' : '1px solid transparent',
         background: isOver
-          ? `
-              ${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / 5vh no-repeat padding-box,` : ''}
-              linear-gradient(45deg, #161616bb, #000000b4) padding-box,
-              linear-gradient(90deg, rgba(255,255,255,0.336), rgba(0,0,0,0.589)) border-box
-            `
+          ? `${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / ${imgSizePct}% ${imgSizePct}% no-repeat padding-box,` : ''} linear-gradient(45deg, #161616bb, #000000b4) padding-box, linear-gradient(90deg, rgba(255,255,255,0.336), rgba(0,0,0,0.589)) border-box`
           : rarityColor
-            ? `
-              ${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / 5vh no-repeat padding-box,` : ''}
-              linear-gradient(45deg, #161616bb, #000000b4) padding-box,
-              linear-gradient(-45deg, rgba(255,255,255,0), ${withAlpha(rarityColor, 1)}) border-box
-            `
-            : `
-              ${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / 5vh no-repeat padding-box,` : ''}
-              linear-gradient(45deg, #161616bb, #000000b4) padding-box,
-              linear-gradient(135deg, rgba(255,255,255,0.336), rgba(0,0,0,0.589)) border-box
-            `,
-        filter:
-          !canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) ||
-            !canCraftItem(item, inventoryType)
-            ? 'brightness(80%) grayscale(100%)'
-            : undefined,
-        opacity: isDragging ? 0.4 : 1.0,
-        boxShadow: isOver
-          ? 'inset 0px 0px 40px -20px rgba(255,255,255, 0.1)'
-          : rarityColor
-            ? `inset 0px 0px 3vh -2vh ${withAlpha(rarityColor, 1)}`
-            : 'inset 0px 0px 2vh -1vh rgba(0,0,0, 1)',
+          ? `${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / ${imgSizePct}% ${imgSizePct}% no-repeat padding-box,` : ''} linear-gradient(45deg, #161616bb, #000000b4) padding-box, linear-gradient(-45deg, rgba(255,255,255,0), ${withAlpha(rarityColor, 1)}) border-box`
+          : `${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / ${imgSizePct}% ${imgSizePct}% no-repeat padding-box,` : ''} linear-gradient(45deg, #161616bb, #000000b4) padding-box, linear-gradient(135deg, rgba(255,255,255,0.12), rgba(0,0,0,0.589)) border-box`,
+        filter: (!canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) || !canCraftItem(item, inventoryType)) ? 'brightness(80%) grayscale(100%)' : undefined,
+        opacity: isDragging ? 0.35 : 1.0,
+        boxShadow: isOver ? 'inset 0px 0px 40px -20px rgba(255,255,255,0.1)' : rarityColor ? `inset 0px 0px 3vh -2vh ${withAlpha(rarityColor, 1)}` : 'inset 0px 0px 2vh -1vh rgba(0,0,0,1)',
         ...style,
       }}
     >
       {isSlotWithItem(item) && (
         <div
           className="item-slot-wrapper"
-          onMouseEnter={() => {
-            timerRef.current = window.setTimeout(() => {
-              dispatch(openTooltip({ item, inventoryType }));
-            }, 500) as unknown as number;
-          }}
-          onMouseLeave={() => {
-            dispatch(closeTooltip());
-            if (timerRef.current) {
-              clearTimeout(timerRef.current);
-              timerRef.current = null;
-            }
-          }}
+          onMouseEnter={() => { timerRef.current = window.setTimeout(() => { dispatch(openTooltip({ item, inventoryType })); }, 500) as unknown as number; }}
+          onMouseLeave={() => { dispatch(closeTooltip()); if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; } }}
         >
-          <div className='item-slot-header-wrapper' style={{ color: `${rarityColor}` }}>
+          <div className="item-slot-header-wrapper" style={{ color: rarityColor ?? undefined }}>
             <div className="hotbar-slot-header-wrapper">
               {item.count && item.count > 1 && (
                 <div className={visualInventoryType === 'utility' ? 'item-slot-info-wrapper2' : 'item-slot-info-wrapper'}>
@@ -242,64 +182,41 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
                 </div>
               )}
             </div>
-
             {visualInventoryType === 'utility' && item.slot <= 5 && (
               <div className="hotbar-slot-header-wrapper">
-                {item.slot === 3 || item.slot === 4 || item.slot === 5 ? (
-                  <div className="inventory-slot-number" style={{ background: `${rarityColor}`, border: `1px solid ${rarityColor}` }}>
-                    {item.slot}
-                  </div>
+                {(item.slot === 3 || item.slot === 4 || item.slot === 5) ? (
+                  <div className="inventory-slot-number" style={{ background: rarityColor ?? undefined, border: `1px solid ${rarityColor}` }}>{item.slot}</div>
                 ) : (
-                  <div className="inventory-slot-number">
-                    {item.slot}
-                  </div>
+                  <div className="inventory-slot-number">{item.slot}</div>
                 )}
               </div>
             )}
-
-            <div className="inventory-slot-rarity" style={{ color: `${rarityColor}` }}>{getRarityDisplayName(item.rarity)}</div>
+            <div className="inventory-slot-rarity" style={{ color: rarityColor ?? undefined }}>{getRarityDisplayName(item.rarity)}</div>
           </div>
+
+          {(itemW > 1 || itemH > 1) && (
+            <div style={{ position: 'absolute', bottom: 22, right: 5, fontSize: '0.65vh', color: 'rgba(255,255,255,0.3)', pointerEvents: 'none', userSelect: 'none' }}>
+              {itemW}×{itemH}
+            </div>
+          )}
+
           <div>
             {inventoryType === 'shop' && item?.price !== undefined ? (
               <div className="inventory-slot-label-box">
-                <div className="inventory-slot-label-text">
-                  {item.metadata?.label ? item.metadata.label : Items[item.name]?.label || item.label || item.name}
-                </div>
-
+                <div className="inventory-slot-label-text">{item.metadata?.label ? item.metadata.label : Items[item.name]?.label || item.label || item.name}</div>
                 {item?.currency !== 'money' && item.currency ? (
                   <div className="item-slot-currency-wrapper">
-                    <img
-                      src={
-                        item.currency === 'black_money'
-                          ? 'assets/icons/black_money.png'
-                          : 'assets/icons/money.png'
-                      }
-                      alt={item.currency}
-                    />
-                    <p style={{ color: 'rgba(171, 171, 171, 1)' }}>
-                      {item.price.toLocaleString('en-us')}
-                    </p>
+                    <img src={item.currency === 'black_money' ? 'assets/icons/black_money.png' : 'assets/icons/money.png'} alt={item.currency} />
+                    <p style={{ color: 'rgba(171,171,171,1)' }}>{item.price.toLocaleString('en-us')}</p>
                   </div>
                 ) : (
-                  <p style={{ color: 'rgba(171, 171, 171, 1)' }}>
-                    {Locale.$ || '$'}
-                    {item.price.toLocaleString('en-us')}
-                  </p>
+                  <p style={{ color: 'rgba(171,171,171,1)' }}>{Locale.$ || '$'}{item.price.toLocaleString('en-us')}</p>
                 )}
               </div>
             ) : (
               <div className="inventory-slot-label-box">
-                <div className="inventory-slot-label-text">
-                  {item.metadata?.label ? item.metadata.label : Items[item.name]?.label || item.label || item.name}
-                </div>
-
-                <p>
-                  {item.weight > 0 ? item.weight >= 1000 ? `${(item.weight / 1000).toLocaleString('en-us', {
-                    minimumFractionDigits: 2
-                  })}kg ` : `${item.weight.toLocaleString('en-us', {
-                    minimumFractionDigits: 0
-                  })}g ` : ''}
-                </p>
+                <div className="inventory-slot-label-text">{item.metadata?.label ? item.metadata.label : Items[item.name]?.label || item.label || item.name}</div>
+                <p>{item.weight > 0 ? item.weight >= 1000 ? `${(item.weight / 1000).toLocaleString('en-us', { minimumFractionDigits: 2 })}kg ` : `${item.weight.toLocaleString('en-us', { minimumFractionDigits: 0 })}g ` : ''}</p>
               </div>
             )}
           </div>
