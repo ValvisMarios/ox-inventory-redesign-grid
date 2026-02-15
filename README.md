@@ -1,6 +1,7 @@
 > [!CAUTION]
 > This is still a work in progress and needs testing for **ALL FRAMEWORKS**.
-<img width="1376" height="774" alt="image" src="https://github.com/user-attachments/assets/56556ea1-eeef-405c-9a6a-e455d7a237fd" />
+<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/c84e21b9-3473-45bd-a461-e54992a718d5" />
+
 
 # 📌 Project Status 
 > [!NOTE]  
