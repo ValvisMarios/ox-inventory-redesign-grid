@@ -5,6 +5,8 @@ return {
         stack = true,
         close = true,
         description = 'Call in a basic supply drop',
+		gridWidth = 5, -- Example Usage of gridWidth
+		gridHeight = 2, -- Example Usage of gridHeight
         client = {
             image = 'airdrop_flare_basic.png',
             usetime = 2500,
