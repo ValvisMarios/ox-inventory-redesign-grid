@@ -9,6 +9,29 @@ local Inventories = {}
 local OxInventory = {}
 OxInventory.__index = OxInventory
 
+-- Load all item dimensions from both weapons and items
+local ItemDimensions = {}
+
+-- Load weapons data
+local WeaponData = lib.load('data.weapons') or {}
+if WeaponData.Weapons then
+    for itemName, itemInfo in pairs(WeaponData.Weapons) do
+        ItemDimensions[itemName] = {
+            width = itemInfo.gridWidth or 1,
+            height = itemInfo.gridHeight or 1
+        }
+    end
+end
+
+-- Load items data (will override weapons if same name, but that's fine)
+local ItemsData = lib.load('data.items') or {}
+for itemName, itemInfo in pairs(ItemsData) do
+    ItemDimensions[itemName] = {
+        width = itemInfo.gridWidth or 1,
+        height = itemInfo.gridHeight or 1
+    }
+end
+
 ---Open a player's inventory, optionally with a secondary inventory.
 ---@param inv? inventory
 function OxInventory:openInventory(inv)
@@ -1214,158 +1237,212 @@ end
 ---@return boolean? success, string|SlotWithItem|nil response
 function Inventory.AddItem(inv, item, count, metadata, slot, cb)
     if type(item) ~= 'table' then item = Items(item) end
-
     if not item then return false, 'invalid_item' end
-    if type(count) ~= 'number' then return false, 'invalid_count' end
-
-    count = math.floor(count + 0.5)
-    if count <= 0 then return false, 'negative_count' end
-
-    inv = Inventory(inv) --[[@as OxInventory]]
-
+    
+    inv = Inventory(inv)
     if not inv?.slots then return false, 'invalid_inventory' end
 
-    local toSlot, slotMetadata, slotCount
-    local success, response = false
-
+    local invWidth = 10 -- Your UI grid width
+    local mainInventoryStart = 10 -- Slots 1-9 are hotbar
     metadata = assertMetadata(metadata)
+    
+    -- Get dimensions for the NEW item we're adding
+    local newItemWidth = 1
+    local newItemHeight = 1
+    
+    if ItemDimensions[item.name] then
+        newItemWidth = ItemDimensions[item.name].width
+        newItemHeight = ItemDimensions[item.name].height
+    else
+        newItemWidth = item.gridWidth or 1
+        newItemHeight = item.gridHeight or 1
+    end
 
-    if slot then
-        if inv.type == 'player' and slot >= 1 and slot <= 9 then
-            if not SlotRestrictions.canItemBePlacedInSlot(item.name, slot) then
-                return false, 'slot_restricted'
+    print(string.format("Adding item: %s, Width: %d, Height: %d", item.name, newItemWidth, newItemHeight))
+
+    -- First, try to stack with existing items if stackable
+    if item.stack then
+        for slotNum, slotData in pairs(inv.items) do
+            if slotData.name == item.name then
+                local metadataMatch = true
+                if metadata then
+                    local slotMeta = slotData.metadata or {}
+                    for k, v in pairs(metadata) do
+                        if k ~= 'durability' and slotMeta[k] ~= v then
+                            metadataMatch = false
+                            break
+                        end
+                    end
+                end
+                
+                if metadataMatch then
+                    local slotMetadata, slotCount = Items.Metadata(inv.id, item, metadata and table.clone(metadata) or {}, count)
+                    Inventory.SetSlot(inv, item, slotCount, slotData.metadata, slotNum)
+                    
+                    if inv.player and server.syncInventory then 
+                        server.syncInventory(inv) 
+                    end
+                    
+                    inv:syncSlotsWithClients({ 
+                        { item = inv.items[slotNum], inventory = inv.id } 
+                    }, true)
+
+                    if cb then return cb(true, inv.items[slotNum]) end
+                    return true, inv.items[slotNum]
+                end
+            end
+        end
+    end
+
+    -- Calculate total rows for main inventory (slots 10+)
+    local mainInventorySlots = inv.slots - (mainInventoryStart - 1)
+    local totalRows = math.ceil(mainInventorySlots / invWidth)
+    
+    -- Create a 2D grid for main inventory only (slots 10+)
+    local grid = {}
+    
+    -- Initialize grid with false (free)
+    for row = 1, totalRows do
+        grid[row] = {}
+        for col = 1, invWidth do
+            grid[row][col] = false
+        end
+    end
+
+    -- Mark ALL occupied slots based on existing items and their dimensions
+    for topLeftSlot, slotData in pairs(inv.items) do
+        -- Only process items in main inventory (slots 10+)
+        if topLeftSlot >= mainInventoryStart then
+            -- Get dimensions for this existing item
+            local itemWidth = 1
+            local itemHeight = 1
+            
+            if ItemDimensions[slotData.name] then
+                itemWidth = ItemDimensions[slotData.name].width
+                itemHeight = ItemDimensions[slotData.name].height
+            else
+                local existingItem = Items(slotData.name)
+                if existingItem then
+                    itemWidth = existingItem.gridWidth or 1
+                    itemHeight = existingItem.gridHeight or 1
+                end
+            end
+            
+            -- Calculate position in main inventory grid
+            -- Convert slot to 0-based relative to main inventory start
+            local relativeSlot = topLeftSlot - mainInventoryStart
+            local startRow = math.floor(relativeSlot / invWidth) + 1
+            local startCol = (relativeSlot % invWidth) + 1
+            
+            print(string.format("Existing item: %s at slot %d, Width: %d, Height: %d, Position: (row %d, col %d)", 
+                slotData.name, topLeftSlot, itemWidth, itemHeight, startRow, startCol))
+            
+            -- Mark ALL cells this item occupies
+            for rowOffset = 0, itemHeight - 1 do
+                for colOffset = 0, itemWidth - 1 do
+                    local currentRow = startRow + rowOffset
+                    local currentCol = startCol + colOffset
+                    
+                    -- Check if we're still within the grid bounds
+                    if currentRow <= totalRows and currentCol <= invWidth then
+                        grid[currentRow][currentCol] = true
+                        local occupiedSlot = mainInventoryStart + ((currentRow - 1) * invWidth) + (currentCol - 1)
+                        print(string.format("  Marking slot %d at grid (row %d, col %d) as occupied", 
+                            occupiedSlot, currentRow, currentCol))
+                    end
+                end
+            end
+        end
+    end
+
+    -- Helper function to convert grid position to actual slot number
+    local function gridToSlot(row, col)
+        return mainInventoryStart + ((row - 1) * invWidth) + (col - 1)
+    end
+
+    -- Helper function to check if a position can fit the new item
+    local function canFitAt(startRow, startCol)
+        -- Check if item would go out of bounds horizontally
+        if startCol + newItemWidth - 1 > invWidth then
+            print(string.format("  Cannot place at (row %d, col %d) - goes out of bounds horizontally", startRow, startCol))
+            return false
+        end
+        
+        -- Check if item would go out of bounds vertically
+        if startRow + newItemHeight - 1 > totalRows then
+            print(string.format("  Cannot place at (row %d, col %d) - goes out of bounds vertically", startRow, startCol))
+            return false
+        end
+        
+        -- Check if all required cells are free
+        for rowOffset = 0, newItemHeight - 1 do
+            for colOffset = 0, newItemWidth - 1 do
+                local checkRow = startRow + rowOffset
+                local checkCol = startCol + colOffset
+                
+                if grid[checkRow][checkCol] then
+                    local occupiedSlot = gridToSlot(checkRow, checkCol)
+                    print(string.format("  Cannot place at (row %d, col %d) - cell (row %d, col %d) [slot %d] is occupied", 
+                        startRow, startCol, checkRow, checkCol, occupiedSlot))
+                    return false
+                end
             end
         end
         
-        local slotData = inv.items[slot]
-        slotMetadata, slotCount = Items.Metadata(inv.id, item, metadata and table.clone(metadata) or {}, count)
+        print(string.format("  Can place at (row %d, col %d) - all cells free", startRow, startCol))
+        return true
+    end
 
-        if not slotData or (item.stack and slotData.name == item.name and matchesExcludingDurability(slotData.metadata, slotMetadata)) then
-            toSlot = slot
+    -- If a specific slot was requested, check if we can place it there
+    if slot and slot >= mainInventoryStart then
+        local relativeSlot = slot - mainInventoryStart
+        local startRow = math.floor(relativeSlot / invWidth) + 1
+        local startCol = (relativeSlot % invWidth) + 1
+        
+        print(string.format("Checking requested slot %d at grid (row %d, col %d)", slot, startRow, startCol))
+        
+        if canFitAt(startRow, startCol) then
+            local slotMetadata, slotCount = Items.Metadata(inv.id, item, metadata and table.clone(metadata) or {}, count)
+            Inventory.SetSlot(inv, item, slotCount, slotMetadata, slot)
+            
+            if inv.player and server.syncInventory then 
+                server.syncInventory(inv) 
+            end
+            
+            inv:syncSlotsWithClients({ 
+                { item = inv.items[slot], inventory = inv.id } 
+            }, true)
+
+            if cb then return cb(true, inv.items[slot]) end
+            return true, inv.items[slot]
         end
     end
 
-    if not toSlot then
-        local items = inv.items
-        slotMetadata, slotCount = Items.Metadata(inv.id, item, metadata and table.clone(metadata) or {}, count)
-
-        local startSlot = (inv.type == 'player') and 10 or 1
-        for i = startSlot, inv.slots do
-            local slotData = items[i]
-
-            if item.stack and slotData ~= nil and slotData.name == item.name and matchesExcludingDurability(slotData.metadata, slotMetadata) then
-                toSlot = i
-                break
-            elseif not item.stack and not slotData then
-                if not toSlot then toSlot = {} end
-
-                toSlot[#toSlot + 1] = { slot = i, count = slotCount, metadata = slotMetadata }
-
-                if count == slotCount then
-                    break
-                end
-
-                count -= 1
-                slotMetadata, slotCount = Items.Metadata(inv.id, item, metadata and table.clone(metadata) or {}, count)
-            elseif not toSlot and not slotData then
-                toSlot = i
-            end
-        end
-
-        if not toSlot and inv.type == 'player' then
-            for i = 1, 9 do
-                local slotData = items[i]
+    -- Search for empty space in main inventory
+    for row = 1, totalRows do
+        for col = 1, invWidth do
+            if canFitAt(row, col) then
+                local newSlot = gridToSlot(row, col)
+                local slotMetadata, slotCount = Items.Metadata(inv.id, item, metadata and table.clone(metadata) or {}, count)
+                Inventory.SetSlot(inv, item, slotCount, slotMetadata, newSlot)
                 
-                if not SlotRestrictions.canItemBePlacedInSlot(item.name, i) then
-                    goto continue
-                end
-
-                if item.stack and slotData ~= nil and slotData.name == item.name and matchesExcludingDurability(slotData.metadata, slotMetadata) then
-                    toSlot = i
-                    break
-                elseif not item.stack and not slotData then
-                    if not toSlot then toSlot = {} end
-
-                    toSlot[#toSlot + 1] = { slot = i, count = slotCount, metadata = slotMetadata }
-
-                    if count == slotCount then
-                        break
-                    end
-
-                    count -= 1
-                    slotMetadata, slotCount = Items.Metadata(inv.id, item, metadata and table.clone(metadata) or {},
-                        count)
-                elseif not toSlot and not slotData then
-                    toSlot = i
+                print(string.format("Placing %s at slot %d (grid row %d, col %d)", item.name, newSlot, row, col))
+                
+                if inv.player and server.syncInventory then 
+                    server.syncInventory(inv) 
                 end
                 
-                ::continue::
+                inv:syncSlotsWithClients({ 
+                    { item = inv.items[newSlot], inventory = inv.id } 
+                }, true)
+
+                if cb then return cb(true, inv.items[newSlot]) end
+                return true, inv.items[newSlot]
             end
         end
     end
 
-    if not toSlot then return false, 'inventory_full' end
-
-    inv.changed = true
-
-    local invokingResource = server.loglevel > 1 and GetInvokingResource()
-    local toSlotType = type(toSlot)
-
-    if toSlotType == 'number' then
-        Inventory.SetSlot(inv, item, slotCount, slotMetadata, toSlot)
-
-        if inv.player and server.syncInventory then
-            server.syncInventory(inv)
-        end
-
-        inv:syncSlotsWithClients({
-            {
-                item = inv.items[toSlot],
-                inventory = inv.id
-            }
-        }, true)
-
-        if invokingResource then
-            lib.logger(inv.owner, 'addItem',
-                ('"%s" added %sx %s to "%s"'):format(invokingResource, count, item.name, inv.label))
-        end
-
-        success = true
-        response = inv.items[toSlot]
-    elseif toSlotType == 'table' then
-        local added = 0
-
-        for i = 1, #toSlot do
-            local data = toSlot[i]
-            added += data.count
-            Inventory.SetSlot(inv, item, data.count, data.metadata, data.slot)
-            toSlot[i] = { item = inv.items[data.slot], inventory = inv.id }
-        end
-
-        if inv.player and server.syncInventory then
-            server.syncInventory(inv)
-        end
-
-        inv:syncSlotsWithClients(toSlot, true)
-
-        if invokingResource then
-            lib.logger(inv.owner, 'addItem',
-                ('"%s" added %sx %s to "%s"'):format(invokingResource, added, item.name, inv.label))
-        end
-
-        for i = 1, #toSlot do
-            toSlot[i] = toSlot[i].item
-        end
-
-        success = true
-        response = toSlot
-    end
-
-    if cb then
-        return cb(success, response)
-    end
-
-    return success, response
+    return false, 'inventory_full'
 end
 
 exports('AddItem', Inventory.AddItem)
@@ -1878,6 +1955,28 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
     end
 
     if data.toType == 'inspect' or data.fromType == 'inspect' then return end
+
+    -- ========== ADD SLOT RESTRICTION CHECK HERE ==========
+    -- Check if we're moving an item into a player's hotbar slots (1-9)
+    if toInventory.type == 'player' and toInventory.id == source then
+        local fromData = fromInventory.items[data.fromSlot]
+        if fromData and data.toSlot <= 9 then
+            local canPlace = SlotRestrictions.canItemBePlacedInSlot(fromData.name, data.toSlot)
+            if not canPlace then
+                print(string.format("Blocked: %s cannot go in slot %d", fromData.name, data.toSlot))
+                return false, 'Item cannot be placed in this slot'
+            end
+        end
+    end
+
+    -- Also check if we're moving an item from a player's hotbar (if that matters)
+    if fromInventory.type == 'player' and fromInventory.id == source then
+        local fromData = fromInventory.items[data.fromSlot]
+        if fromData and data.fromSlot <= 9 then
+            -- Optional: Check if item can be removed from this slot?
+            -- Usually we don't restrict removal, only placement
+        end
+    end
 
     local fromRef = ('%s:%s'):format(fromInventory.id, data.fromSlot)
     local toRef = ('%s:%s'):format(toInventory.id, data.toSlot)
