@@ -412,7 +412,7 @@ function client.openInventory(inv, data)
     SetNuiFocusKeepInput(true)
     closeTrunk()
 
-    if screenBlurEnabled then Utils.blurIn() end
+    -- if screenBlurEnabled then Utils.blurIn() end
 
     currentInventory = right or defaultInventory
     left.items = PlayerData.inventory
@@ -1053,7 +1053,7 @@ function client.closeInventory(server)
         invOpen = nil
         SetNuiFocus(false, false)
         SetNuiFocusKeepInput(false)
-        Utils.blurOut()
+        -- Utils.blurOut()
         closeTrunk()
         SendNUIMessage({ action = 'closeInventory' })
         SetInterval(client.interval, 200)
@@ -1455,6 +1455,8 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
             description = v.description,
             buttons = buttons,
             ammoName = v.ammoname,
+            gridWidth = v.gridWidth,    -- ADD THIS
+            gridHeight = v.gridHeight,  -- ADD THIS
             image = v.client?.image
         }
     end
@@ -1822,7 +1824,7 @@ RegisterNetEvent('ox_inventory:viewInventory', function(left, right)
     SetNuiFocusKeepInput(true)
     closeTrunk()
 
-    if screenBlurEnabled then Utils.blurIn() end
+    -- if screenBlurEnabled then Utils.blurIn() end
 
     currentInventory = right or defaultInventory
     currentInventory.ignoreSecurityChecks = true
