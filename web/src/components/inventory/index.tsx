@@ -56,6 +56,7 @@ const Inventory: React.FC = () => {
   return (
     <>
       <Fade in={inventoryVisible}>
+      <img src="https://r2.fivemanage.com/AU6hA55PXUx99pfF80Auf/image4.png" alt="Background" className="inventory-background" style={{ position: 'absolute', top: '0', left: '0', width: '100%', height: '100%'}} />
         <div className="inventory-wrapper">
           <InventoryPanelSwitcher activePanel={activePanel} setActivePanel={setActivePanel} />
 

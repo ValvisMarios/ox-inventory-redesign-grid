@@ -42,7 +42,7 @@ debugData([
       leftInventory: {
         id: 'test',
         type: 'player',
-        slots: 8,
+        slots: 80,
         label: 'Pockets',
         weight: 3000,
         maxWeight: 5000,
@@ -103,7 +103,7 @@ debugData([
             slot: 7,
             name: 'Armor',
             weight: 100,
-            count: 1,
+            count: 3,
             rarity: 'mythic',
             metadata: {
               durability: 85,
@@ -133,7 +133,7 @@ debugData([
             slot: 10,
             name: 'cloth',
             weight: 100,
-            count: 3,
+            count: 10,
             rarity: 'common',
             metadata: {
               durability: 85,
@@ -142,6 +142,7 @@ debugData([
           {
             slot: 11,
             name: 'scrapmetal',
+            label: 'Scrap Metal',
             weight: 100,
             count: 5,
             rarity: 'common',
@@ -183,7 +184,7 @@ debugData([
       backpackInventory: {
         id: 'backpack_demo',
         type: 'backpack',
-        slots: 8,
+        slots: 40,
         label: 'Backpack',
         weight: 800,
         maxWeight: 4000,

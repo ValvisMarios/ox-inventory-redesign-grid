@@ -46,7 +46,7 @@ const InventoryContext: React.FC<InventoryContextProps> = ({ setSplitItem }) => 
     if (!item) return false;
 
     const name = item.name?.toUpperCase() || '';
-    const isWeapon = name.startsWith('WEAPON_');
+    const isWeapon = name.startsWith('WEAPON_') || name.startsWith('WZ_');
 
     const isInPlayerUtilitySlot = contextMenu.inventoryType === 'player' && [1, 2].includes(item.slot);
 

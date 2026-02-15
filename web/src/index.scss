@@ -11,13 +11,13 @@ $secondaryColorHighlight: #33343F;
 $secondaryColorLight: rgba(0, 0, 0, 0.5);
 $secondaryColorDark: rgba(12, 12, 12, 0.8);
 // ======================== Accent Colors =======================
-$accentColor: #77deb9;
-$accentColorDark: #4ec3a6;
-$accentColorLight: #a3f0dd;
+$accentColor: #f1732a;
+$accentColorDark: #924410;
+$accentColorLight: #f0c8a3;
 // ======================== Highlight Colors =======================
-$highlightColor: rgba(19, 222, 185, 0.4);
-$highlightColorLight: rgba(19, 222, 185, 0.6);
-$highlightColorDark: rgba(19, 222, 185, 0.2);
+$highlightColor: rgba(222, 94, 19, 0.4);
+$highlightColorLight: rgba(222, 110, 19, 0.6);
+$highlightColorDark: rgba(222, 77, 19, 0.2);
 // ======================== Rarity Colors =======================
 $rarityColors: (
   1: rgba(167, 167, 167, 0.5),
@@ -568,7 +568,7 @@ input[type='number']::-webkit-outer-spin-button {
 
 .man-svg {
   z-index: -1;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(162, 202, 49, 0.25)' stroke-dasharray='5 3' transform='scale(1%2c -1)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(202, 105, 49, 0.25)' stroke-dasharray='5 3' transform='scale(1%2c -1)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
 }
 
 .utility-inventory-wrapper {
@@ -990,7 +990,8 @@ input[type='number']::-webkit-outer-spin-button {
 .inventory-slot-label-text {
   text-transform: capitalize;
   overflow: hidden;
-  font-weight: 900;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   font-family: $mainFont;
   font-size: 1vh;
   white-space: normal;

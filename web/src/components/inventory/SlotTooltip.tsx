@@ -95,6 +95,7 @@ const SlotTooltip: React.ForwardRefRenderFunction<
               padding: '1rem',
               borderRadius: '5px',
               overflow: 'hidden',
+              position: 'relative', // Added for count positioning if needed
             }}>
               <img src={item ? getItemUrl(item) : 'none'} style={{
                 width: '4rem',
@@ -102,25 +103,54 @@ const SlotTooltip: React.ForwardRefRenderFunction<
               }} />
             </div>
             <div style={{
-              gap: '2vh',
+              gap: '0.5vh', // Reduced gap slightly
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
+              flex: '1', // Take remaining space
             }}>
-              <p style={{
-                fontSize: '1.5vh',
-                fontWeight: '600',
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
               }}>
-                <span style={{ color: rarityColor, fontWeight: '700' }}>
-                  {item.metadata?.label || itemData.label || item.name}
-                </span>
-              </p>
-              <a style={{
-                fontSize: '1vh',
-                fontWeight: '400',
+                <p style={{
+                  fontSize: '1.5vh',
+                  fontWeight: '600',
+                }}>
+                  <span style={{ color: rarityColor, fontWeight: '700' }}>
+                    {item.metadata?.label || itemData.label || item.name}
+                  </span>
+                </p>
+                {/* 🔥 NEW: Item count display */}
+                {item.count !== undefined && item.count > 1 && (
+                  <span style={{
+                    fontSize: '1.3vh',
+                    fontWeight: '600',
+                    color: 'rgba(255,255,255,0.8)',
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '4px',
+                    border: `1px solid ${withAlpha(rarityColor, 0.5)}`,
+                    marginLeft: '0.5rem',
+                  }}>
+                    x{item.count}
+                  </span>
+                )}
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
               }}>
-                <span style={{ color: rarityColor, fontWeight: '600', textTransform: 'capitalize' }}>{getRarityDisplayName(item.rarity || 'common')}</span>
-              </a>
+                <a style={{
+                  fontSize: '1vh',
+                  fontWeight: '400',
+                }}>
+                  <span style={{ color: rarityColor, fontWeight: '600', textTransform: 'capitalize' }}>{getRarityDisplayName(item.rarity || 'common')}</span>
+                </a>
+              </div>
             </div>
           </div>
           <div className="tool-wrapper-inner-casper" style={{

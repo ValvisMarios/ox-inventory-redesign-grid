@@ -31,7 +31,7 @@ export const GRID_SIZE_PREFIXES: Array<{ prefix: string; size: GridSize }> = [
   { prefix: 'weapon_compactrifle',     size: { w: 2, h: 2 } },
   { prefix: 'weapon_specialcarbine',   size: { w: 3, h: 2 } },
   { prefix: 'weapon_militaryrifle',    size: { w: 3, h: 2 } },
-  { prefix: 'weapon_remotesniper',     size: { w: 4, h: 2 } },
+  { prefix: 'wz_ak47',                 size: { w: 5, h: 2 } },
   { prefix: 'weapon_gusenberg',        size: { w: 3, h: 2 } },
   { prefix: 'weapon_musket',           size: { w: 4, h: 2 } },
 
@@ -111,8 +111,8 @@ export const GRID_SIZE_PREFIXES: Array<{ prefix: string; size: GridSize }> = [
   { prefix: 'weapon_fireextinguisher', size: { w: 2, h: 2 } },
 
   // ── Generic weapon_ fallback (catches any remaining weapons) ─────────────────
-  { prefix: 'weapon_',                 size: { w: 2, h: 1 } },
-
+  { prefix: 'weapon_',                 size: { w: 5, h: 2 } },
+  { prefix: 'wz_',                 size: { w: 3, h: 2 } },
   // ── Ammo ─────────────────────────────────────────────────────────────────────
   { prefix: 'ammo_',                   size: { w: 1, h: 1 } },
   { prefix: 'ammo-',                   size: { w: 1, h: 1 } },
@@ -123,6 +123,9 @@ export const GRID_SIZE_PREFIXES: Array<{ prefix: string; size: GridSize }> = [
   { prefix: 'bag_',                    size: { w: 2, h: 2 } },
   { prefix: 'briefcase',               size: { w: 2, h: 2 } },
   { prefix: 'package',                 size: { w: 2, h: 2 } },
+  { prefix: 'canteen',                 size: { w: 2, h: 2 } },
+  { prefix: 'consumable_',             size: { w: 2, h: 2 } },
+  { prefix: 'scrapmetal',                   size: { w: 3, h: 2 } },
 ];
 
 /** Exact-name overrides — checked after prefix matching */
@@ -241,5 +244,5 @@ export function getDefaultGridSize(name: string): GridSize {
   for (const entry of GRID_SIZE_PREFIXES) {
     if (lower.startsWith(entry.prefix)) return entry.size;
   }
-  return { w: 1, h: 1 };
+  return { w: 2, h: 2 }; // default size
 }

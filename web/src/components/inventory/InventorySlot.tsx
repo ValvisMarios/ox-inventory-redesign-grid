@@ -19,14 +19,44 @@ import { getDefaultGridSize } from './gridSizes';
 
 export function getItemWidth(item: any): number {
   if (!item?.name) return 1;
-  const itemData = Items[item.name] as any;
-  return itemData?.gridWidth ?? item.gridWidth ?? getDefaultGridSize(item.name).w;
+  
+  // Priority 1: Check if the item slot has gridWidth (from metadata)
+  if (item.gridWidth !== undefined) return item.gridWidth;
+  
+  // Priority 2: Check the Items store
+  const itemData = Items[item.name];
+  if (itemData) {
+    // Try to access gridWidth from the item data
+    // Cast to any to avoid TypeScript errors if the property doesn't exist in the type
+    const data = itemData as any;
+    if (data.gridWidth !== undefined) return data.gridWidth;
+  }
+  
+  // Priority 3: Check if the item name is in the items.lua data that might be in metadata
+  if (item.metadata?.gridWidth !== undefined) return item.metadata.gridWidth;
+  
+  // Priority 4: Fallback to gridSizes.ts
+  return getDefaultGridSize(item.name).w;
 }
 
 export function getItemHeight(item: any): number {
   if (!item?.name) return 1;
-  const itemData = Items[item.name] as any;
-  return itemData?.gridHeight ?? item.gridHeight ?? getDefaultGridSize(item.name).h;
+  
+  // Priority 1: Check if the item slot has gridHeight (from metadata)
+  if (item.gridHeight !== undefined) return item.gridHeight;
+  
+  // Priority 2: Check the Items store
+  const itemData = Items[item.name];
+  if (itemData) {
+    const data = itemData as any;
+    if (data.gridHeight !== undefined) return data.gridHeight;
+  }
+  
+  // Priority 3: Check if the item name is in the items.lua data that might be in metadata
+  if (item.metadata?.gridHeight !== undefined) return item.metadata.gridHeight;
+  
+  // Priority 4: Fallback to gridSizes.ts
+  return getDefaultGridSize(item.name).h;
 }
 
 interface SlotProps {
@@ -61,6 +91,9 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
 
   const itemW = getItemWidth(item);
   const itemH = getItemHeight(item);
+  
+  // 🔥 NEW: Check if item is at least 2x2
+  const isLargeItem = itemW >= 2 && itemH >= 2;
 
   const withAlpha = (color: string, alpha: number) => {
     return color.replace(/rgba?\(([^)]+)\)/, (match, contents) => {
@@ -172,24 +205,20 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
       className="inventory-slot"
       style={{
         ...positionStyle,
-        borderRadius: '4px',
+        borderRadius: rarityColor ? '4px' : '0px',
         padding: '6px',
         boxSizing: 'border-box',
         border: isOver ? '1px dashed rgba(255,255,255,0.5)' : '1px solid transparent',
         background: isOver
-          ? `${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / contain no-repeat padding-box,` : ''} linear-gradient(45deg, #161616bb, #000000b4) padding-box, linear-gradient(90deg, rgba(255,255,255,0.336), rgba(0,0,0,0.589)) border-box`
+          ? `${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / contain no-repeat padding-box,` : ''} linear-gradient(45deg, #ffffff00, #00000000) padding-box, linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0)) border-box`
           : rarityColor
-          ? `${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / contain no-repeat padding-box,` : ''} linear-gradient(45deg, #161616bb, #000000b4) padding-box, linear-gradient(-45deg, rgba(255,255,255,0), ${withAlpha(rarityColor, 1)}) border-box`
-          : `${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / contain no-repeat padding-box,` : ''} linear-gradient(45deg, #161616bb, #000000b4) padding-box, linear-gradient(135deg, rgba(255,255,255,0.12), rgba(0,0,0,0.589)) border-box`,
+          ? `${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / contain no-repeat padding-box,` : ''} linear-gradient(45deg, #161616bb, #000000b4) padding-box, linear-gradient(-45deg, rgba(255, 255, 255, 0), ${withAlpha(rarityColor, 1)}) border-box`
+          : `${item?.name ? `url(${getItemUrl(item as SlotWithItem)}) center / contain no-repeat padding-box,` : ''} linear-gradient(45deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0)) padding-box, linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03)) border-box`,
         filter: (!canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) || !canCraftItem(item, inventoryType))
           ? 'brightness(80%) grayscale(100%)'
           : undefined,
         opacity: isDragging ? 0.35 : 1.0,
-        boxShadow: isOver
-          ? 'inset 0px 0px 40px -20px rgba(255,255,255,0.1)'
-          : rarityColor
-          ? `inset 0px 0px 3vh -2vh ${withAlpha(rarityColor, 1)}`
-          : 'inset 0px 0px 2vh -1vh rgba(0,0,0,1)',
+
         overflow: 'hidden', // <-- prevent overflow
         ...style,
       }}
@@ -235,45 +264,34 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
                 </div>
               </div>
             )}
-            <div
-              className="inventory-slot-rarity"
-              style={{
-                color: rarityColor ?? undefined,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {getRarityDisplayName(item.rarity)}
-            </div>
+            {/* 🔥 MODIFIED: Only show rarity for large items (2x2 or bigger) */}
+            {isLargeItem && (
+              <div
+                className="inventory-slot-rarity"
+                style={{
+                  color: rarityColor ?? undefined,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {getRarityDisplayName(item.rarity)}
+              </div>
+            )}
           </div>
-
-          {(itemW > 1 || itemH > 1) && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 22,
-                right: 5,
-                fontSize: '0.65vh',
-                color: 'rgba(255,255,255,0.3)',
-                pointerEvents: 'none',
-                userSelect: 'none',
-                overflow: 'hidden',
-              }}
-            >
-              {itemW}×{itemH}
-            </div>
-          )}
 
           <div style={{ overflow: 'hidden' }}>
             {inventoryType === 'shop' && item?.price !== undefined ? (
               <div className="inventory-slot-label-box" style={{ overflow: 'hidden' }}>
-                <div
-                  className="inventory-slot-label-text"
-                  style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                >
-                  {item.metadata?.label ?? Items[item.name]?.label ?? item.label ?? item.name}
-                </div>
+                {/* 🔥 MODIFIED: Only show label for large items (2x2 or bigger) */}
+                {isLargeItem && (
+                  <div
+                    className="inventory-slot-label-text"
+                    style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  >
+                    {item.metadata?.label ?? Items[item.name]?.label ?? item.label ?? item.name}
+                  </div>
+                )}
                 {item?.currency !== 'money' && item.currency ? (
                   <div className="item-slot-currency-wrapper" style={{ overflow: 'hidden' }}>
                     <img
@@ -294,19 +312,25 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
               </div>
             ) : (
               <div className="inventory-slot-label-box" style={{ overflow: 'hidden' }}>
-                <div
-                  className="inventory-slot-label-text"
-                  style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                >
-                  {item.metadata?.label ?? Items[item.name]?.label ?? item.label ?? item.name}
-                </div>
-                <p style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {item.weight > 0
-                    ? item.weight >= 1000
-                      ? `${(item.weight / 1000).toLocaleString('en-us', { minimumFractionDigits: 2 })}kg`
-                      : `${item.weight.toLocaleString('en-us', { minimumFractionDigits: 0 })}g`
-                    : ''}
-                </p>
+                {/* 🔥 MODIFIED: Only show label for large items (2x2 or bigger) */}
+                {isLargeItem && (
+                  <div
+                    className="inventory-slot-label-text"
+                    style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  >
+                    {item.metadata?.label ?? Items[item.name]?.label ?? item.label ?? item.name}
+                  </div>
+                )}
+                {/* 🔥 MODIFIED: Only show weight for large items (2x2 or bigger) */}
+                {isLargeItem && (
+                  <p style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.weight > 0
+                      ? item.weight >= 1000
+                        ? `${(item.weight / 1000).toLocaleString('en-us', { minimumFractionDigits: 2 })}kg`
+                        : `${item.weight.toLocaleString('en-us', { minimumFractionDigits: 0 })}g`
+                      : ''}
+                  </p>
+                )}
               </div>
             )}
           </div>

@@ -9,6 +9,8 @@ export type ItemData = {
   buttons?: string[];
   ammoName?: string;
   image?: string;
+  gridWidth?: number;  // Added: grid width for inventory slot
+  gridHeight?: number; // Added: grid height for inventory slot
 };
 
 export type ItemDataWithGrid = ItemData & {

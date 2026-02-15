@@ -1,23 +1,6 @@
 export const BodyArmor: React.FC = () => {
   return (
-    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M16 10 H48 C50 20, 54 26, 54 36 V50 C54 54, 50 58, 46 58 H18 C14 58, 10 54, 10 50 V36 C10 26, 14 20, 16 10 Z"
-        stroke="#707070"
-        strokeWidth={3}
-        fill="none"
-        strokeLinejoin="round"
-      />
-
-      <path d="M16 10 C16 6, 24 6, 24 10" stroke="#707070" strokeWidth={3} strokeLinecap="round" />
-      <path d="M48 10 C48 6, 40 6, 40 10" stroke="#707070" strokeWidth={3} strokeLinecap="round" />
-
-      <rect x="20" y="24" width="24" height="10" rx="2" stroke="#707070" strokeWidth={2.5} fill="none" />
-      <rect x="20" y="38" width="24" height="10" rx="2" stroke="#707070" strokeWidth={2.5} fill="none" />
-
-      <path d="M10 28 H6 M58 28 H54" stroke="#707070" strokeWidth={2.5} strokeLinecap="round" />
-      <path d="M10 42 H6 M58 42 H54" stroke="#707070" strokeWidth={2.5} strokeLinecap="round" />
-    </svg>
+    <svg fill="#363636" height="64" width="64" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 297 297" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M282.661,151.416c-23.435-12.426-24.013-34.588-24.013-62.125c0-21.651,3.257-43.006,3.396-43.904 c0.02-0.126,0.041-0.25,0.065-0.374c3.089-15.761-7.625-32.174-23.396-35.845L199.253,0c-4.983,19.445-20.887,34.271-40.794,37.837 V297h83.217c19.535,0,40.985-26.196,40.985-50.054V151.416z M191.268,79.061h18.747c5.177,0,9.375,4.197,9.375,9.375 c0,5.176-4.198,9.373-9.375,9.373h-18.747c-5.177,0-9.374-4.197-9.374-9.373C181.894,83.258,186.091,79.061,191.268,79.061z M244.58,231.384h-57.414c-5.176,0-9.373-4.197-9.373-9.373c0-5.177,4.197-9.374,9.373-9.374h57.414 c5.177,0,9.374,4.197,9.374,9.374C253.954,227.186,249.757,231.384,244.58,231.384z"></path> <path d="M39.253,95.002c0.12,23.97-0.309,44.904-24.914,56.663v95.281c0,22.921,24.348,50.054,44.917,50.054h80.456V37.791 c-19.431-3.596-35.146-18.063-40.365-37.011L62.125,9.607c-15.77,3.74-24.66,19.428-23.102,35.441 C40.234,57.479,39.253,95.002,39.253,95.002z M52.42,212.637h57.414c5.176,0,9.373,4.197,9.373,9.374 c0,5.176-4.197,9.373-9.373,9.373H52.42c-5.177,0-9.374-4.197-9.374-9.373C43.046,216.834,47.243,212.637,52.42,212.637z"></path> </g> </g></svg>
   );
 };
 
